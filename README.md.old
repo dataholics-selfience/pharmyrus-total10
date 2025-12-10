@@ -1,0 +1,113 @@
+# Pharmyrus Patent Intelligence API
+
+**Version**: 3.1.0 - BATCH OPTIMIZED  
+**Status**: Production Ready ✅  
+**Last Updated**: 2025-12-10
+
+---
+
+## 🎯 O QUE É NOVO NA v3.1
+
+### 📦 BATCH PROCESSING COMPLETO
+
+Processe **múltiplas moléculas simultaneamente**:
+
+- ✅ **Até 50 moléculas por batch**
+- ✅ **3 buscas concorrentes** (60-70% mais rápido)
+- ✅ **Job tracking em tempo real**
+- ✅ **Estimativa de tempo restante**
+- ✅ **Status individual por molécula**
+- ✅ **Rate limiting automático**
+
+---
+
+## 🚀 QUICK START
+
+### Single Search
+```bash
+curl "https://pharmyrus-total10-production.up.railway.app/api/v1/search/darolutamide?country=BR"
+```
+
+### Batch Search (NEW)
+```bash
+curl -X POST "https://pharmyrus-total10-production.up.railway.app/api/v1/batch/search" \
+  -H "Content-Type: application/json" \
+  -d '{"molecules": ["darolutamide", "olaparib", "venetoclax"], "country_filter": "BR"}'
+```
+
+---
+
+## 📚 DOCUMENTATION
+
+- **[BATCH-GUIDE-v3.1.md](BATCH-GUIDE-v3.1.md)** - Complete batch processing guide
+- **[TESTES-v3.1-COMPLETE.md](TESTES-v3.1-COMPLETE.md)** - Full test suite
+- **[CHANGELOG-v3.1.md](CHANGELOG-v3.1.md)** - Detailed changelog
+- **[Swagger UI](https://pharmyrus-total10-production.up.railway.app/docs)** - Interactive API docs
+
+---
+
+## ⚡ PERFORMANCE
+
+| Moléculas | Sequential | Batch (3x) | Speedup |
+|-----------|-----------|------------|---------|
+| 10 | 8-10 min | 3-5 min | **60-70%** |
+
+---
+
+## 🔗 KEY ENDPOINTS
+
+### Batch (v3.1 NEW)
+- `POST /api/v1/batch/search` - Create batch job
+- `GET /api/v1/batch/status/{id}` - Check progress
+- `GET /api/v1/batch/results/{id}` - Get results
+
+### Pipeline (v3.0)
+- `GET /api/v1/search/{molecule}` - Complete pipeline
+- `GET /api/v1/wipo/{wo_number}` - WIPO search
+
+---
+
+## 🎨 PYTHON EXAMPLE
+
+```python
+import requests
+import time
+
+# Create batch
+batch = requests.post("https://.../api/v1/batch/search", json={
+    "molecules": ["darolutamide", "olaparib"],
+    "country_filter": "BR"
+})
+
+batch_id = batch.json()["batch_id"]
+
+# Monitor progress
+while True:
+    status = requests.get(f"https://.../api/v1/batch/status/{batch_id}").json()
+    if status["status"] == "completed": break
+    time.sleep(5)
+
+# Get results
+results = requests.get(f"https://.../api/v1/batch/results/{batch_id}").json()
+```
+
+---
+
+## 📦 DEPLOYMENT
+
+```bash
+# Railway
+railway up
+
+# Docker
+docker build -t pharmyrus-api .
+docker run -p 8000:8000 pharmyrus-api
+
+# Local
+pip install -r requirements.txt
+python -m src.api_service
+```
+
+---
+
+**See full documentation in [BATCH-GUIDE-v3.1.md](BATCH-GUIDE-v3.1.md)**

@@ -196,21 +196,43 @@ async def root():
             "ClinicalTrials.gov"
         ]
     }
-                "wipo_search": "/api/v1/wipo/{wo_number}?country=BR_US_JP",
-                "molecule_search": "/api/v1/search/{molecule}?country=BR_US",
-                "pipeline": "/api/v1/pipeline/{molecule} (em desenvolvimento)"
-            },
-            "# Advanced (POST)": {
-                "single": "/api/wipo/patent",
-                "batch": "/api/wipo/patents/batch"
-            },
-            "# Utilities": {
-                "health": "/health",
-                "cache_stats": "/api/cache/stats",
-                "cache_clear": "/api/cache/clear",
-                "docs": "/docs"
-            }
-        },
+
+
+# =============================================================================
+# LEGACY ENDPOINT (v3.0 compatibility)
+# =============================================================================
+
+@app.post("/api/search")
+async def search_molecule_legacy(request: SearchRequest):
+    """
+    🔄 LEGACY ENDPOINT - v3.0 Compatibility
+    
+    Single molecule search (backward compatible)
+    Redirects to new pipeline system
+    """
+    try:
+        logger.info(f"🔄 Legacy search: {request.nome_molecula}")
+        
+        result = await pipeline_service.search_molecule(
+            molecule=request.nome_molecula,
+            brand=request.nome_comercial
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Legacy search error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# EXAMPLES HELPER
+# =============================================================================
+
+@app.get("/examples")
+async def get_examples():
+    """Get API usage examples"""
+    return {
         "examples": {
             "simple_test": "/test/WO2018162793",
             "wipo_full": "/api/v1/wipo/WO2018162793?country=BR_US_JP",
