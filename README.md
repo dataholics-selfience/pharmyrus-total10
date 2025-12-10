@@ -208,9 +208,41 @@ python -m pytest --cov=src tests/
 
 ## 🐛 Troubleshooting
 
+### ⚠️ Erro de Build: playwright install-deps
+
+**Problema:** `E: Package 'ttf-unifont' has no installation candidate`
+
+**Solução 1 (Recomendada):** Use o Dockerfile corrigido
+```bash
+# Já está corrigido! Apenas faça:
+railway up
+```
+
+**Solução 2:** Use Dockerfile com imagem oficial Playwright
+```bash
+# Edite railway.json:
+{
+  "build": {
+    "dockerfilePath": "Dockerfile.playwright"
+  }
+}
+
+# Deploy:
+railway up
+```
+
+**Solução 3:** Build local
+```bash
+./build.sh  # Escolha opção 2
+```
+
+📚 **Guia completo:** Veja `docs/BUILD_TROUBLESHOOTING.md`
+
+---
+
 ### Timeout
 
-```python
+```bash
 # Aumente o timeout
 railway variables set WIPO_TIMEOUT=90000
 ```
@@ -224,7 +256,7 @@ curl -X DELETE "https://seu-app.railway.app/api/cache/clear"
 
 ### Pool muito agressivo
 
-```python
+```bash
 # Reduza o pool size
 railway variables set WIPO_POOL_SIZE=2
 ```
