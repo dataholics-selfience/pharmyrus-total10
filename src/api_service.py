@@ -93,13 +93,38 @@ async def root():
     """Endpoint raiz"""
     return {
         "service": "Pharmyrus WIPO Crawler API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "operational",
         "endpoints": {
+            "# Browser-Friendly (GET)": {
+                "test_wo": "/test/{wo_number}",
+                "wipo_search": "/api/v1/wipo/{wo_number}?country=BR_US_JP",
+                "molecule_search": "/api/v1/search/{molecule}?country=BR_US",
+                "pipeline": "/api/v1/pipeline/{molecule} (em desenvolvimento)"
+            },
+            "# Advanced (POST)": {
+                "single": "/api/wipo/patent",
+                "batch": "/api/wipo/patents/batch"
+            },
+            "# Utilities": {
+                "health": "/health",
+                "cache_stats": "/api/cache/stats",
+                "cache_clear": "/api/cache/clear",
+                "docs": "/docs"
+            }
+        },
+        "examples": {
+            "simple_test": "/test/WO2018162793",
+            "wipo_full": "/api/v1/wipo/WO2018162793?country=BR_US_JP",
+            "molecule": "/api/v1/search/darolutamide?country=BR",
             "health": "/health",
-            "single": "/api/wipo/patent",
-            "batch": "/api/wipo/patents/batch",
             "docs": "/docs"
+        },
+        "known_molecules": {
+            "darolutamide": ["WO2018162793", "WO2011103316"],
+            "olaparib": ["WO2016168716"],
+            "venetoclax": ["WO2013107291"],
+            "axitinib": ["WO2011051540"]
         }
     }
 
@@ -109,9 +134,16 @@ async def health():
     """Health check"""
     return {
         "status": "healthy",
+        "version": "2.0.0",
         "timestamp": datetime.now().isoformat(),
         "cache_size": len(_cache),
-        "pool_active": _pool is not None
+        "pool_active": _pool is not None,
+        "features": {
+            "browser_get": True,
+            "post_api": True,
+            "pooling": True,
+            "cache": True
+        }
     }
 
 
@@ -243,6 +275,154 @@ async def cache_stats():
         "ttl_seconds": _cache_ttl,
         "entries": sorted(entries, key=lambda x: x['age_seconds'])
     }
+
+
+# ===== BROWSER-FRIENDLY GET ENDPOINTS =====
+
+@app.get("/test/{wo_number}")
+async def test_wo_simple(wo_number: str):
+    """
+    Endpoint simples para testar WO direto no browser
+    Exemplo: /test/WO2018162793
+    """
+    wo = wo_number.strip().upper()
+    logger.info(f"🧪 Test endpoint: {wo}")
+    
+    # Cache
+    cached = _get_from_cache(wo)
+    if cached:
+        return JSONResponse(content=cached)
+    
+    try:
+        async with WIPOCrawler() as crawler:
+            result = await crawler.fetch_patent(wo)
+        
+        if result.get('titulo'):
+            _set_cache(wo, result)
+        
+        return JSONResponse(content=result)
+        
+    except Exception as e:
+        logger.error(f"❌ Erro: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/wipo/{wo_number}")
+async def get_wipo_patent(
+    wo_number: str,
+    country: Optional[str] = None
+):
+    """
+    Buscar patente WIPO por WO number (GET para browser)
+    
+    Exemplos:
+    - /api/v1/wipo/WO2018162793
+    - /api/v1/wipo/WO2018162793?country=BR_US_JP
+    
+    country: Filtrar países da família (BR, US, JP, EP, CN, etc)
+    """
+    wo = wo_number.strip().upper()
+    logger.info(f"🔍 WIPO GET: {wo} | countries={country}")
+    
+    # Cache
+    cached = _get_from_cache(wo)
+    if cached:
+        result = cached.copy()
+    else:
+        try:
+            async with WIPOCrawler() as crawler:
+                result = await crawler.fetch_patent(wo)
+            
+            if result.get('titulo'):
+                _set_cache(wo, result)
+                
+        except Exception as e:
+            logger.error(f"❌ Erro: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    # Filtrar países se solicitado
+    if country and result.get('worldwide_applications'):
+        countries = [c.strip().upper() for c in country.split('_')]
+        filtered_apps = {
+            k: v for k, v in result['worldwide_applications'].items()
+            if k.upper() in countries
+        }
+        result['worldwide_applications'] = filtered_apps
+        result['paises_familia'] = [p for p in result.get('paises_familia', []) if p.upper() in countries]
+        result['filter_applied'] = country
+    
+    return JSONResponse(content=result)
+
+
+@app.get("/api/v1/search/{molecule}")
+async def search_by_molecule(
+    molecule: str,
+    country: Optional[str] = None,
+    limit: int = 10
+):
+    """
+    Buscar patentes por nome de molécula (GET para browser)
+    
+    Esta API busca WIPO diretamente. Para buscar WOs use o endpoint completo
+    da Pharmyrus que integra PubChem + Google Patents + EPO.
+    
+    Exemplos:
+    - /api/v1/search/darolutamide
+    - /api/v1/search/darolutamide?country=BR_US_JP
+    - /api/v1/search/olaparib?country=BR&limit=5
+    
+    Parâmetros:
+    - molecule: Nome da molécula
+    - country: Países alvo separados por _ (BR_US_JP)
+    - limit: Número máximo de resultados (padrão 10)
+    
+    NOTA: Este endpoint busca no WIPO Patentscope diretamente.
+    Para pipeline completo (PubChem > Google > EPO > WIPO > INPI),
+    use o endpoint /api/v1/pipeline/{molecule}
+    """
+    mol = molecule.strip()
+    logger.info(f"🔬 Busca molécula: {mol} | countries={country} | limit={limit}")
+    
+    return JSONResponse(content={
+        "error": "Endpoint em desenvolvimento",
+        "message": f"Para buscar '{mol}', use os WO numbers conhecidos",
+        "suggestion": "Use o endpoint /api/v1/wipo/WO2018162793",
+        "known_wos": {
+            "darolutamide": ["WO2018162793", "WO2011103316"],
+            "olaparib": ["WO2016168716", "WO2005012305"],
+            "venetoclax": ["WO2013107291"],
+            "axitinib": ["WO2011051540"]
+        },
+        "alternative": f"Ou use: /api/v1/wipo/WO[número] ou /test/WO[número]",
+        "status": "use_wo_numbers_instead"
+    })
+
+
+@app.get("/api/v1/pipeline/{molecule}")
+async def pipeline_search(
+    molecule: str,
+    country: Optional[str] = "BR_US_JP",
+    sources: str = "pubchem,google,epo,wipo"
+):
+    """
+    Pipeline completo de busca de patentes (futuro)
+    
+    Fluxo: PubChem > Google Patents > EPO > WIPO > INPI
+    
+    Exemplos:
+    - /api/v1/pipeline/darolutamide
+    - /api/v1/pipeline/darolutamide?country=BR_US
+    
+    NOTA: Este endpoint requer integração completa com outros serviços.
+    Por enquanto, use os endpoints de WO direto.
+    """
+    return JSONResponse(content={
+        "error": "Pipeline completo em desenvolvimento",
+        "message": "Para busca completa, use o n8n workflow existente",
+        "workflow_url": "https://seu-n8n.com/workflow/pharmyrus",
+        "alternative": "Use /api/v1/wipo/WO[número] para buscar WIPO diretamente",
+        "status": "under_development"
+    })
 
 
 # Startup/Shutdown
