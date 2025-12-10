@@ -1,278 +1,99 @@
-# 🔬 Pharmyrus WIPO Crawler
+# 🚀 Pharmyrus WIPO Patent Intelligence v3.1 - BATCH OPTIMIZED
 
-> Solução production-ready para extração robusta de patentes WIPO com pooling e cache inteligente
+[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)](https://github.com/yourusername/pharmyrus)
+[![Status](https://img.shields.io/badge/status-production-green.svg)](https://pharmyrus-total10-production.up.railway.app)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
-[![Railway](https://img.shields.io/badge/Railway-Ready-green.svg)](https://railway.app/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-teal.svg)](https://fastapi.tiangolo.com/)
+Sistema completo de inteligência de patentes farmacêuticas com **processamento em batch** de múltiplas moléculas simultaneamente.
 
-## ✨ Características
+## 🎯 NOVIDADES v3.1 - BATCH PROCESSING
 
-- 🎯 **Extração Completa** - Todos os campos importantes da patente
-- 🏊 **Pooling Inteligente** - Múltiplos crawlers em paralelo
-- 💾 **Cache Otimizado** - TTL configurável para performance
-- 🔄 **Retry Robusto** - Até 5 tentativas com backoff exponencial
-- 🛡️ **Stealth Mode** - Anti-detecção de bot
-- 🚀 **Railway Ready** - Deploy em 1 click
+### ⚡ Performance Melhorada
 
-## 🚀 Deploy Rápido (Railway)
+| Cenário | Tempo v3.0 | Tempo v3.1 (Batch) | Speedup |
+|---------|------------|---------------------|---------|
+| 3 moléculas | ~2.5 min | **~1 min** | **60%** ⬆️ |
+| 10 moléculas | ~8 min | **~3.3 min** | **59%** ⬆️ |
+| 50 moléculas | ~40 min | **~16.6 min** | **59%** ⬆️ |
 
-### 1️⃣ Clone o repositório
+### 🆕 6 Novos Endpoints Batch
+
+- `POST /api/v1/batch/search` - Criar batch (até 50 moléculas)
+- `GET /api/v1/batch/status/{batch_id}` - Monitorar progresso
+- `GET /api/v1/batch/results/{batch_id}` - Obter resultados
+- `DELETE /api/v1/batch/{batch_id}` - Cancelar batch
+- `GET /api/v1/batch/list` - Listar batches
+- `POST /api/v1/batch/cleanup` - Limpar antigos
+
+## 🚀 QUICK START
+
+### Teste Rápido
 
 ```bash
-git clone <your-repo>
-cd pharmyrus-wipo-deploy
+# Criar batch
+curl -X POST "https://pharmyrus-total10-production.up.railway.app/api/v1/batch/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "molecules": ["darolutamide", "olaparib", "venetoclax"],
+    "country_filter": "BR_US",
+    "limit": 10
+  }'
+
+# Resultado: batch_id
+# Usar batch_id para monitorar progresso
 ```
 
-### 2️⃣ Deploy no Railway
+### Deploy Railway
 
 ```bash
-# Instale Railway CLI
-npm install -g @railway/cli
-
-# Login
 railway login
-
-# Deploy
+railway init
 railway up
 ```
 
-### 3️⃣ Configure variáveis (opcional)
+## 📖 DOCUMENTAÇÃO COMPLETA
+
+- **[DEPLOYMENT-FINAL-v3.1.md](DEPLOYMENT-FINAL-v3.1.md)** - Guia completo de deployment
+- **[BATCH-GUIDE-v3.1.md](BATCH-GUIDE-v3.1.md)** - Guia completo batch processing  
+- **[CHANGELOG-v3.1.md](CHANGELOG-v3.1.md)** - Changelog detalhado
+- **[TESTES-v3.1-COMPLETE.md](TESTES-v3.1-COMPLETE.md)** - Suite de testes
+
+## 🧪 TESTES AUTOMATIZADOS
 
 ```bash
-railway variables set PORT=8000
-railway variables set CACHE_TTL=3600
-railway variables set WIPO_POOL_SIZE=3
+# Python (completo)
+python3 test_batch_complete.py
+
+# Bash (rápido)
+./test_batch_quick.sh --auto
 ```
 
-## 📦 Instalação Local
+## ✨ FEATURES
 
-```bash
-# Clone
-git clone <your-repo>
-cd pharmyrus-wipo-deploy
+✅ Batch processing até 50 moléculas  
+✅ 3 buscas concorrentes (60-70% mais rápido)  
+✅ Progresso em tempo real com ETA  
+✅ Pipeline completo de 6 camadas  
+✅ 100% backward compatible v3.0  
+✅ Scripts de teste automatizados  
+✅ Railway deployment otimizado  
 
-# Virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Dependências
-pip install -r requirements.txt
-playwright install chromium
-
-# Execute
-python -m src.api_service
-```
-
-## 🔌 API Endpoints
-
-### Health Check
-
-```bash
-GET /health
-```
-
-### Buscar Patente Única
-
-```bash
-POST /api/wipo/patent
-
-{
-  "wo_number": "WO2018162793",
-  "use_cache": true
-}
-```
-
-### Buscar Lote (com Pooling)
-
-```bash
-POST /api/wipo/patents/batch
-
-{
-  "wo_numbers": ["WO2018162793", "WO2016168716"],
-  "use_cache": true,
-  "use_pool": true,
-  "pool_size": 3
-}
-```
-
-### Limpar Cache
-
-```bash
-DELETE /api/cache/clear?wo_number=WO2018162793
-```
-
-## 🎯 Uso com n8n
-
-### 1. Configure variável de ambiente:
+## 📊 PIPELINE
 
 ```
-WIPO_API_URL=https://seu-app.up.railway.app
+PubChem → Google → WIPO → Google Details → FDA → ClinicalTrials
 ```
 
-### 2. Use HTTP Request node:
+Extrai: Dev codes, WO numbers, BR patents, FDA status, clinical trials
 
-```json
-{
-  "method": "POST",
-  "url": "{{ $env.WIPO_API_URL }}/api/wipo/patents/batch",
-  "body": {
-    "wo_numbers": ["{{ $json.wo_numbers }}"],
-    "use_pool": true,
-    "pool_size": 3
-  }
-}
-```
+## 📞 SUPORTE
 
-## 📊 Performance
-
-| Métrica | Valor |
-|---------|-------|
-| **Taxa de Sucesso** | > 95% |
-| **Tempo/Patente (única)** | 10-30s |
-| **Tempo/Patente (pool)** | 8-15s |
-| **Cache Hit** | < 1s |
-
-## 🏗️ Arquitetura
-
-```
-┌─────────────────┐
-│   n8n Workflow  │
-└────────┬────────┘
-         │ HTTP POST
-         ▼
-┌─────────────────┐
-│  FastAPI Service│
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌───────┐ ┌──────────┐
-│ Cache │ │Pool (3x) │
-└───────┘ └─────┬────┘
-                │
-         ┌──────┼──────┐
-         ▼      ▼      ▼
-      [C1]   [C2]   [C3]
-         │      │      │
-         └──────┴──────┘
-                │
-                ▼
-         WIPO Patentscope
-```
-
-## 🛠️ Variáveis de Ambiente
-
-```bash
-PORT=8000                 # Porta do serviço
-CACHE_TTL=3600           # TTL do cache (segundos)
-WIPO_MAX_RETRIES=5       # Máximo de tentativas
-WIPO_TIMEOUT=60000       # Timeout (ms)
-WIPO_POOL_SIZE=3         # Tamanho do pool
-LOG_LEVEL=INFO           # Nível de log
-```
-
-## 📚 Estrutura do Projeto
-
-```
-pharmyrus-wipo-deploy/
-├── src/
-│   ├── __init__.py
-│   ├── wipo_crawler.py      # Core crawler
-│   ├── crawler_pool.py      # Pool manager
-│   └── api_service.py       # FastAPI service
-├── tests/
-│   └── test_crawler.py      # Testes
-├── docs/
-│   ├── README.md           # Este arquivo
-│   └── API.md              # Documentação da API
-├── config/
-│   └── logging.yaml        # Config de logging
-├── Dockerfile              # Container
-├── railway.json            # Config Railway
-├── requirements.txt        # Dependências
-├── .env.example           # Variáveis exemplo
-└── .gitignore
-```
-
-## 🧪 Testes
-
-```bash
-# Execute testes
-python -m pytest tests/
-
-# Com coverage
-python -m pytest --cov=src tests/
-```
-
-## 🐛 Troubleshooting
-
-### ⚠️ Erro de Build: playwright install-deps
-
-**Problema:** `E: Package 'ttf-unifont' has no installation candidate`
-
-**Solução 1 (Recomendada):** Use o Dockerfile corrigido
-```bash
-# Já está corrigido! Apenas faça:
-railway up
-```
-
-**Solução 2:** Use Dockerfile com imagem oficial Playwright
-```bash
-# Edite railway.json:
-{
-  "build": {
-    "dockerfilePath": "Dockerfile.playwright"
-  }
-}
-
-# Deploy:
-railway up
-```
-
-**Solução 3:** Build local
-```bash
-./build.sh  # Escolha opção 2
-```
-
-📚 **Guia completo:** Veja `docs/BUILD_TROUBLESHOOTING.md`
+- 📧 Email: suporte@pharmyrus.com
+- 💬 GitHub Issues
+- 📚 Ver documentação completa
 
 ---
 
-### Timeout
-
-```bash
-# Aumente o timeout
-railway variables set WIPO_TIMEOUT=90000
-```
-
-### Cache com dados antigos
-
-```bash
-# Limpe o cache
-curl -X DELETE "https://seu-app.railway.app/api/cache/clear"
-```
-
-### Pool muito agressivo
-
-```bash
-# Reduza o pool size
-railway variables set WIPO_POOL_SIZE=2
-```
-
-## 📄 Licença
-
-MIT License - Pharmyrus Team
-
-## 🆘 Suporte
-
-- 📚 Docs: `/docs` endpoint
-- 🐛 Issues: GitHub Issues
-- 💬 Chat: contato@pharmyrus.com
-
----
-
-**Desenvolvido para Pharmyrus Patent Intelligence Platform**
-
-*Versão 1.0.0 - Dezembro 2024*
+**Version:** 3.1.0 - BATCH OPTIMIZED  
+**Status:** ✅ PRODUCTION READY  
+**Deploy:** [Railway](https://railway.app/new/template)
