@@ -64,6 +64,12 @@ class BatchRequest(BaseModel):
     pool_size: int = Field(3, ge=1, le=5, description="Tamanho do pool")
 
 
+class SearchRequest(BaseModel):
+    """Legacy v3.0 compatibility - Single molecule search"""
+    nome_molecula: str = Field(..., description="Nome da molécula")
+    nome_comercial: Optional[str] = Field(None, description="Nome comercial (opcional)")
+
+
 # Helper functions
 def _get_cache_key(wo: str) -> str:
     return f"wipo_{wo.replace('WO', '').replace(' ', '')}"
