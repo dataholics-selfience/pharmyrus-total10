@@ -1,0 +1,14 @@
+# Pharmyrus WIPO Crawler - Production Dependencies
+# Python 3.11+
+
+# Core
+playwright==1.41.0
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+
+# Utilities
+python-dotenv==1.0.0
+
+# Instalação pós-deploy
+# RUN: playwright install chromium
